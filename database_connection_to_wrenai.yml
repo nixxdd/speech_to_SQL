@@ -1,0 +1,6 @@
+datasource: postgres
+host: host.docker.internal
+port: 5432
+database: wrenai
+user: db_manager
+password: 1010

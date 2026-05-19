@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: sts-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: db_manager
+      POSTGRES_PASSWORD: 1010
+      POSTGRES_DB: wrenai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:

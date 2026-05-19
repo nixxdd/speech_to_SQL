@@ -1,0 +1,22 @@
+### SETUP ###
+
+- Install brew (MacOS only)
+- Install Docker;
+- Install Ollama and pull the required models:
+  >> brew install ollama
+  >> ollama pull qwen2.5-coder:3b
+  >> ollama pull nomic-embed-text:latest
+
+- While in the folder of the docker-compose files for the database and later of the wrenai stack
+  Run the command to start the docker containers;
+  - database folder path     -> (<PROJECT_FOLDER>/)
+  - Wrenai stack folder path -> (<PROJECT_FOLDER/WrenAI/docker/)
+
+
+### CONNECT DATABASE TO WRENAI ###
+
+Once the containers for the database are up run the following command:
+>> wren profile add <DB_NAME> --from-file <CONNECTION_FILE.yml>
+
+(The connection file is located in the root folder of the project; The command must be run
+From a terminal open in this folder)
