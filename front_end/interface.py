@@ -24,7 +24,7 @@ class Interface:
     }
 
     def __init__(self):
-        self.database_path = r"C:\Users\stefa\OneDrive - Università di Pavia\data_management\front_end\database_example"
+        self.database_path = r"C:\Users\stefa\OneDrive - Università di Pavia\speech_to_SQL\front_end\database_example"
 
         for k, v in self.DEFAULTS.items():
             if k not in st.session_state:
