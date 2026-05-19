@@ -60,19 +60,19 @@ async def _transcribe_speechmatics(file_path: str) -> str:
     except( AuthenticationError, ValueError) as e:
         print(f"\nAuthentication Error: {e}")
 
-def transcribe_audio(file_path: str, engine: str) -> str:
-    if engine == "whisper":
+def transcribe_audio(file_path: str, model_name: str) -> str:
+    if model_name.lower() == "whisper":
         return _transcribe_whisper(file_path)
-    elif engine == "speechmatics":
+    elif model_name.lower() == "speechmatics":
         # speechmatics logic
         pass
     else:
-        raise ValueError(f"Unknown engine '{engine}'. Use 'whisper' or 'speechmatics'")
+        raise ValueError(f"Unknown model '{model_name}'. Use 'whisper' or 'speechmatics'")
 
-def __main__():
-    transcribe_audio(file_path=r"C:\Users\marco\Desktop\speech_to_sql_project\backend\modules\test_resources\audio_tests\q1.wav")
+#def __main__():
+#    transcribe_audio(file_path=r"C:\Users\marco\Desktop\speech_to_sql_project\backend\modules\test_resources\audio_tests\q1.wav")
 
 print('speech_to_text_module START')
 print(f'AUDIO FOLDER PATH: {AUDIO_FOLDER}')
-__main__()
+#__main__()
 print('OK')

@@ -6,9 +6,9 @@ import tempfile
 import shutil
 import os
 
-from backend.modules.db_module import get_db, select_query
-from backend.modules.wrenai_module import generate_sql
-from backend.modules.speech_to_text_module import transcribe_audio
+from .modules.db_module import get_db, select_query
+from .modules.wrenai_module import generate_sql
+from .modules.speech_to_text_module import transcribe_audio
 
 class QueryRequest(BaseModel):
     query_text: str
@@ -23,15 +23,34 @@ app = FastAPI()
 def root():
     return {"message": "FastAPI app is running"}
 
+# @app.post("/transcribe")
+# async def transcribe(file: UploadFile = File(...), model_name: str = Form(...)):
+#     print(f"Received file: {file.filename}, content_type: {file.content_type}, model_name: {model_name}")
+    
+#     try:
+#         contents = await file.read()
+#         print(f"File size: {len(contents)} bytes")
+
+#         # TODO: pass `contents` to your transcription model here
+#         transcript = "placeholder transcript"
+
+#         return {"transcript": transcript, "filename": file.filename}
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/transcribe")
-async def transcribe(file: UploadFile = File(...), engine: str = Form(...)):
+async def transcribe(file: UploadFile = File(...), model_name: str = Form(...)):
     try:
+        print(f"Received file: {file.filename}, content_type: {file.content_type}, model_name: {model_name}")
+
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             shutil.copyfileobj(file.file, tmp)
             tmp_path = tmp.name
 
-        result = transcribe_audio(file_path=tmp_path, engine=engine)
-        return {'status': 'success', 'engine': engine, 'transcription': result}
+        result = transcribe_audio(file_path=tmp_path, model_name=model_name)
+        print(f'Transcription: {result}')
+        return {'status': 'success', 'model_name': model_name, 'transcription': result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:

@@ -24,7 +24,7 @@ class Interface:
     }
 
     def __init__(self):
-        self.database_path = r"C:\Users\stefa\OneDrive - Università di Pavia\speech_to_SQL\front_end\database_example"
+        self.database_path = r"database_example"
 
         for k, v in self.DEFAULTS.items():
             if k not in st.session_state:
@@ -64,39 +64,39 @@ class Interface:
 
     
     ## RAWWWWWWWWWWWRRRRRRRRRRRRRRRRRRRRRRRRR
-    def style_button_row(self, clicked_button_ix, n_buttons):
-        def get_button_indices(button_ix):
-            return {
-                'nth_child': button_ix,
-                'nth_last_child': n_buttons - button_ix + 1
-            }
+    # def style_button_row(self, clicked_button_ix, n_buttons):
+    #     def get_button_indices(button_ix):
+    #         return {
+    #             'nth_child': button_ix,
+    #             'nth_last_child': n_buttons - button_ix + 1
+    #         }
 
-        clicked_style = """
-        div[data-testid*="stHorizontalBlock"] > div:nth-child(%(nth_child)s):nth-last-child(%(nth_last_child)s) button {
-            border-color: rgb(255, 75, 75);
-            color: rgb(255, 75, 75);
-            box-shadow: rgba(255, 75, 75, 0.5) 0px 0px 0px 0.2rem;
-            outline: currentcolor none medium;
-        }
-        """
-        unclicked_style = """
-        div[data-testid*="stHorizontalBlock"] > div:nth-child(%(nth_child)s):nth-last-child(%(nth_last_child)s) button {
-            pointer-events: none;
-            cursor: not-allowed;
-            opacity: 0.65;
-            filter: alpha(opacity=65);
-            -webkit-box-shadow: none;
-            box-shadow: none;
-        }
-        """
-        style = ""
-        for ix in range(n_buttons):
-            ix += 1
-            if ix == clicked_button_ix:
-                style += clicked_style % get_button_indices(ix)
-            else:
-                style += unclicked_style % get_button_indices(ix)
-        st.markdown(f"<style>{style}</style>", unsafe_allow_html=True)
+    #     clicked_style = """
+    #     div[data-testid*="stHorizontalBlock"] > div:nth-child(%(nth_child)s):nth-last-child(%(nth_last_child)s) button {
+    #         border-color: rgb(255, 75, 75);
+    #         color: rgb(255, 75, 75);
+    #         box-shadow: rgba(255, 75, 75, 0.5) 0px 0px 0px 0.2rem;
+    #         outline: currentcolor none medium;
+    #     }
+    #     """
+    #     unclicked_style = """
+    #     div[data-testid*="stHorizontalBlock"] > div:nth-child(%(nth_child)s):nth-last-child(%(nth_last_child)s) button {
+    #         pointer-events: none;
+    #         cursor: not-allowed;
+    #         opacity: 0.65;
+    #         filter: alpha(opacity=65);
+    #         -webkit-box-shadow: none;
+    #         box-shadow: none;
+    #     }
+    #     """
+    #     style = ""
+    #     for ix in range(n_buttons):
+    #         ix += 1
+    #         if ix == clicked_button_ix:
+    #             style += clicked_style % get_button_indices(ix)
+    #         else:
+    #             style += unclicked_style % get_button_indices(ix)
+    #     st.markdown(f"<style>{style}</style>", unsafe_allow_html=True)
     
     def side_bar(self):
         with st.sidebar:
@@ -120,9 +120,9 @@ class Interface:
             
             col1, col2 = st.columns(2, gap="small", vertical_alignment='center')
             with col1:
-                whisper_botton = st.button("Whisper", icon=":material/record_voice_over:", disabled=False, width="stretch", on_click=self.style_button_row, args=(1, 2))
+                whisper_botton = st.button("Whisper", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(1, 2))
             with col2:
-                speechmatics_botton = st.button("Speechmatics", icon=":material/record_voice_over:", disabled=False, width="stretch", on_click=self.style_button_row, args=(2, 2))
+                speechmatics_botton = st.button("Speechmatics", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(2, 2))
             
             if whisper_botton:
                 st.session_state.selected_model = "Whisper"
@@ -153,6 +153,28 @@ class Interface:
 
     
     def fake_backend_pipeline(self, model_name, audio_blob=None):
+        st.session_state.transcript= "show me the games with rating greater than 8"
+        import requests
+
+        response = requests.post(
+            "http://localhost:8000/transcribe",
+            files={
+                'file': ('audio.wav', audio_blob['bytes'], 'audio/wav')
+            },
+            data={
+                'model_name': model_name
+            }
+        )
+
+        if response.ok:
+            result = response.json()
+            st.session_state.transcript = result['transcription']
+            print(f'Transcription: {st.session_state.transcript}')
+        else:
+            st.error(f'Error {response.status_code}: {response.text}')
+
+        
+        #Old Logic
         """
         Placeholder — replace each step with real backend calls:
         1. transcribe_audio(audio_bytes, model)
@@ -160,7 +182,8 @@ class Interface:
         3. generate_sql(text, schema)
         4. execute_sql(query)
         """
-        st.session_state.transcript     = "show me the games with rating greater than 8"
+        
+        
         st.session_state.corrected_text = "Show me the games with rating greater than 8."
         st.session_state.generated_sql  = (
             "SELECT game_name, rating\n"

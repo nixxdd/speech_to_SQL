@@ -8,3 +8,9 @@ docker compose down -v
 
 --- Enter postgre container ---
 docker exec -it sts-db psql -U db_manager -d wrenai
+
+--- Start FastAPI Backend ---
+fastapi dev
+
+--- Start StreamLit Frontend ---
+streamlit run interface.py

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     DB_NAME: str
 
     WREN_AI_BASE_URL: str
+    BACKEND_URL: str
     SPEECHMATICS_API_KEY: str
 
     model_config = SettingsConfigDict(
