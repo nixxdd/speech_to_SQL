@@ -1,0 +1,27 @@
+[
+  {
+    "file": "q1.wav",
+    "reference": "find all users where age is greater than 30 and whose name starts with A",
+    "category": "where_clause"
+  },
+  {
+    "file": "q2.wav", 
+    "reference": "show all orders from last week where status is shipped",
+    "category": "where_clause"
+  },
+  {
+    "file": "q3.wav",
+    "reference": "count the number of active users by country",
+    "category": "group_by"
+  },
+  {
+    "file": "q4.wav",
+    "reference": "list products where price is less than 100 and stock is greater than 0",
+    "category": "where_clause"
+  },
+  {
+    "file": "q5.wav",
+    "reference": "show the top 10 customers by total spending",
+    "category": "order_limit"
+  }
+]

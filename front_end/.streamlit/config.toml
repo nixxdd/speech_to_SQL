@@ -1,0 +1,34 @@
+[theme]
+font = "Nunito:https://fonts.googleapis.com/css2?family=Nunito&display=swap"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:...&display=swap, monospace"
+baseFontSize = 14
+
+headingFont = "'IBM Plex Serif':https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+
+showWidgetBorder = true
+showSidebarBorder = true
+borderColor = "#4a365f"
+
+backgroundColor = "#faf4ed"
+primaryColor = "#4a365f"                       
+secondaryBackgroundColor = "#ffffff"
+
+greenColor = "#10b981"     # Tailwind Emerald
+redColor = "#f43f5e"       # Tailwind Rose
+blueColor = "#1c83e1"      # Streamlit Blue
+blueTextColor = "#1c83e1"  # Streamlit Blue
+greenTextColor = "#84cc16" # Tailwind Lime
+
+linkColor = "#c08cf7"
+
+dataframeBorderColor = "#faf4ed"
+dataframeHeaderBackgroundColor = "#c3e5ff"
+
+[theme.sidebar]
+backgroundColor = "#1e293b"
+textColor = "#f1f5f9"
+secondaryBackgroundColor = "#334155"
+primaryColor = "#c08cf7"
+font = "Nunito:https://fonts.googleapis.com/css2?family=Nunito&display=swap"
+baseRadius = "large"
+borderColor = "#c08cf7"

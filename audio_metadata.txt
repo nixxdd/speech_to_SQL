@@ -1,0 +1,5 @@
+q1.wav : find all users where age is greater than 30 and whose name starts with A
+q2.wav : show all orders from last week where status is shipped
+q3.wav : count the number of active users by country
+q4.wav : list products where price is less than 100 and stock is greater than 0
+q5.wav : show the top 10 customers by total spending
