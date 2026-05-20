@@ -144,6 +144,7 @@ class Interface:
             with col1:
                 if st.button("▶ Run", width="stretch", type="primary"):
                     self._transcribe_audio(st.session_state.selected_model, audio_blob=audio)
+                    self._generate_sql_from_text(st.session_state.transcript)
                     self.fake_backend_pipeline()
             with col2:
                 if st.button("✕ Clear", width="stretch"):
@@ -173,6 +174,27 @@ class Interface:
         else:
             st.error(f'Error {response.status_code}: {response.text}')
 
+    def _generate_sql_from_text(self, question):
+        st.session_state.generated_sql  = (
+            "SELECT game_name, rating\n"
+            "FROM games\n"
+            "WHERE rating > 8\n"
+            "ORDER BY rating DESC;"
+        )
+
+        response = requests.post(
+            "http://localhost:8000/generate_sql",
+            json={
+                'question': question
+            }
+        )
+        if response.ok:
+            result = response.json()
+            st.session_state.generated_sql = result['data']
+            print(f'SQL: {st.session_state.generated_sql}')
+        else:
+            st.error(f'Error {response.status_code}: {response.text}')
+
 
 
     def fake_backend_pipeline(self):
@@ -187,12 +209,6 @@ class Interface:
         
         
         st.session_state.corrected_text = "Show me the games with rating greater than 8."
-        st.session_state.generated_sql  = (
-            "SELECT game_name, rating\n"
-            "FROM games\n"
-            "WHERE rating > 8\n"
-            "ORDER BY rating DESC;"
-        )
         st.session_state.query_result = pd.DataFrame({
             "game_name": ["The Witcher 3", "Portal 2", "Hades"],
             "rating":    [9.8, 9.4, 8.9],

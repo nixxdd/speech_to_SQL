@@ -6,6 +6,12 @@ import tempfile
 import shutil
 import os
 
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+import logging
+
+
 from .modules.db_module import get_db, select_query
 from .modules.wrenai_module import generate_sql
 from .modules.speech_to_text_module import transcribe_audio
@@ -16,6 +22,10 @@ class QueryRequest(BaseModel):
 
 class QuestionRequest(BaseModel):
     question: str
+
+# Setup logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -67,7 +77,7 @@ def run_database_query(request: QueryRequest, db: Session = Depends(get_db)):
     Run a query in the database
     """
     try:
-        result = select_query(db, request.query_text, request.params)
+        result = select_query(db, request.query_text, request.params)    
         return {"status": "Success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -76,6 +86,17 @@ def run_database_query(request: QueryRequest, db: Session = Depends(get_db)):
 def generate_sql_with_wrenai(request: QuestionRequest):
     try:
         result = generate_sql(request.question)
-        return {"status": "success", "data": result}
+        print(f'Result raw: {result}')
+        return {"status": "success", "data": result['sql']}
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error on {request.url}")
+    logger.error(f"Request body: {await request.body()}")
+    logger.error(f"Errors: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(await request.body())}
+    )
