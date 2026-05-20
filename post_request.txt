@@ -1,1 +1,0 @@
-curl -X POST http://localhost:8000/generate_sql -H "Content-Type: application/json" -d '{"question": "Show me all games with a rating greater than 9"}'
