@@ -169,6 +169,11 @@ class Interface:
         else:
             st.error(f'Error {response.status_code}: {response.text}')
 
+    def _fix_wrenai_table_name(self, query: str) -> str:
+        while "public_" in query:
+            query = query.replace('public_', '')
+        return query
+
     def _generate_sql_from_text(self, question):
         st.session_state.generated_sql  = (
             "SELECT game_name, rating\n"
@@ -185,7 +190,8 @@ class Interface:
         )
         if response.ok:
             result = response.json()
-            st.session_state.generated_sql = result['data']
+            result_cleaned = self._fix_wrenai_table_name(result['data'])
+            st.session_state.generated_sql = result_cleaned
             print(f'SQL: {st.session_state.generated_sql}')
         else:
             st.error(f'Error {response.status_code}: {response.text}')
