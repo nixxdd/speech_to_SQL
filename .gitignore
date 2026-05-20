@@ -4,3 +4,5 @@ __pycache__/
 **/.venv/
 **/.env
 **/__pycache__/
+backend/.venv/
+backend/modules/.env
