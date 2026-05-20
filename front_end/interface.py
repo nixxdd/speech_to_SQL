@@ -73,7 +73,7 @@ class Interface:
             st.session_state.users_df = self._query_database(st.session_state.sql_query_templates['get_all_users_query'])
 
     def display_header(self):
-        st.title("🎙️ Voice2Query")
+        st.title(":rainbow[:material/mic: Voice2Query]")
         st.caption("Speech-to-SQL dashboard for interactive database exploration")
         st.divider()
 
@@ -85,18 +85,30 @@ class Interface:
             self._load_db_in_session_state()
             st.session_state.is_database_loaded = True
 
-        tab1, tab2, tab3 = st.tabs(["🎮 Games", "⭐ Reviews", "👤 Users"])
+        tab1, tab2, tab3 = st.tabs([":material/gamepad: **Games**", ":material/star_shine: **Reviews**", ":material/person_pin: **Users**"])
 
         with tab1:
-            st.dataframe(st.session_state.games_df, width="stretch", height=350)
+            st.dataframe(st.session_state.games_df, width="stretch", height=350, hide_index=True)
         with tab2:
-            st.dataframe(st.session_state.reviews_df, width="stretch", height=350)
+            st.dataframe(st.session_state.reviews_df, width="stretch", height=350, hide_index=True)
         with tab3:
-            st.dataframe(st.session_state.users_df, width="stretch", height=350) 
+            st.dataframe(st.session_state.users_df, width="stretch", height=350, hide_index=True) 
     
     def side_bar(self):
+
+        st.markdown(
+                """
+                <style>
+                    section[data-testid="stSidebar"] {
+                        width: 350px !important; # Set the width to your desired value
+                    }
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
+
         with st.sidebar:
-            st.header("🎙️ Query input")
+            st.header(":material/mic: Query input")
             st.markdown("**Record your query**")
 
             audio = mic_recorder(
@@ -116,18 +128,19 @@ class Interface:
             
             col1, col2 = st.columns(2, gap="small", vertical_alignment='center')
             with col1:
-                whisper_botton = st.button("Whisper", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(1, 2))
+                whisper_botton = st.button("**Whisper**", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(1, 2))
             with col2:
-                speechmatics_botton = st.button("Speechmatics", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(2, 2))
+                speechmatics_botton = st.button("**Speechmatics**", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(2, 2))
             
             if whisper_botton:
                 st.session_state.selected_model = "Whisper"
             if speechmatics_botton:
                 st.session_state.selected_model = "Speechmatics"
+        
+            st.markdown(
+                f':color[Model: **{st.session_state.selected_model}**]{{foreground="#8cf7f6"}}'
+            , text_alignment="center")
             
-            st.markdown("**Status**")
-            st.info(f"Model: **{st.session_state.selected_model}**")
-
             st.divider()
             
             
@@ -220,20 +233,28 @@ class Interface:
     def home_page(self):
         self.display_header()
 
-        col_db, col_info = st.columns([3, 0.8])
-
-        with col_db:
-            self.show_database()
-
+     
+        self.show_database()
+        
+        st.divider()
+        st.markdown("#### :primary[Pipeline overview]", text_alignment="left")
+        col_info, col_img = st.columns([1, 2], gap="small", vertical_alignment="center")
         with col_info:
-            st.subheader("Pipeline overview")
             st.markdown(
-                "1. **Speech input**\n"
-                "2. **ASR transcription**\n"
-                "3. **Text → SQL with the selected model**\n"
-                "4. ▶ **Query execution**\n"
+                ":small[:primary["
+                "1. **Speech input**  \n"
+                "2. **ASR transcription**  \n"
+                "3. **Text → SQL with the selected model**  \n"
+                "4. ▶ **Query execution**  \n"
                 "5. **Results dashboard**"
+                "]]",
+                text_alignment="left",
+                width="stretch",
             )
+        with col_img:
+            st.image("files/pipeline_overview.png", width="stretch")
+
+            
 
         self.side_bar()
 
@@ -241,30 +262,30 @@ class Interface:
         self.display_header()
         st.subheader("Review pipeline output")
 
-        col_left, col_right = st.columns(2)
+        col_left, col_right = st.columns(2, gap="medium", border=True)
 
         with col_left:
-            st.markdown("**ASR transcript**")
+            st.markdown("#### :blue[**ASR transcript**]")
             st.info(st.session_state.transcript or "_No transcript yet._")
 
             st.markdown("**Selected model**")
             st.markdown(f"`{st.session_state.selected_model}`")
 
         with col_right:
-            st.markdown("**Generated SQL**")
-            st.code(st.session_state.generated_sql, language="sql")
+            st.markdown("#### :orange[**Generated SQL**]")
+            st.code(st.session_state.generated_sql, language="sql", wrap_lines=True)
 
         st.divider()
         col_ok, col_back = st.columns(2)
         with col_ok:
-            if st.button("▶ Run query", width="stretch", type="primary"):
+            if st.button(":material/play_arrow: **Run query**", width="stretch", type="primary"):
                 st.session_state.query_result = self._query_database(st.session_state.generated_sql)
                 print(f'QUERY RESULTS: {st.session_state.query_result}')
 
                 st.session_state.page = "results"
                 st.rerun()
         with col_back:
-            if st.button("🔄 Re-record", width="stretch"):
+            if st.button(":material/replay: **Re-record**", width="stretch"):
                 st.session_state.page = "home"
                 st.rerun()
 
@@ -272,19 +293,19 @@ class Interface:
         self.display_header()
         st.subheader("Query results")
 
-        col_sql, col_data = st.columns([1, 2])
+        col_sql, col_data = st.columns([1, 2], gap="medium")
 
         with col_sql:
-            st.markdown("**Executed SQL**")
+            st.markdown("#### :orange[**Executed SQL**]")
             st.code(st.session_state.generated_sql, language="sql")
 
             st.divider()
-            if st.button("⬅ New query", width="stretch"):
+            if st.button(":material/keyboard_return: **New query**", width="stretch"):
                 st.session_state.page = "home"
                 st.rerun()
 
         with col_data:
-            st.markdown("**Returned rows**")
+            st.markdown("#### :primary[**Returned rows**]")
             if st.session_state.query_result is not None:
                 st.dataframe(
                     st.session_state.query_result,
