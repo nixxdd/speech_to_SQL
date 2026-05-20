@@ -22,7 +22,11 @@ greenTextColor = "#84cc16" # Tailwind Lime
 linkColor = "#c08cf7"
 
 dataframeBorderColor = "#faf4ed"
-dataframeHeaderBackgroundColor = "#c3e5ff"
+dataframeHeaderBackgroundColor = "#e1ccdf"
+
+codeTextColor = "#c8ddd6"
+codeBackgroundColor = "#002b36"
+
 
 [theme.sidebar]
 backgroundColor = "#1e293b"
