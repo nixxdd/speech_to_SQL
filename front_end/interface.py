@@ -239,6 +239,9 @@ class Interface:
         col_ok, col_back = st.columns(2)
         with col_ok:
             if st.button("▶ Run query", width="stretch", type="primary"):
+                st.session_state.query_result = self._query_database(st.session_state.generated_sql)
+                print(f'QUERY RESULTS: {st.session_state.query_result}')
+
                 st.session_state.page = "results"
                 st.rerun()
         with col_back:
