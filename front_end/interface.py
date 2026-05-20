@@ -22,6 +22,7 @@ class Interface:
         "generated_sql": "",
         "query_result": None,
         "audio_bytes": None,
+        "is_database_loaded": False
     }
 
 
@@ -61,6 +62,16 @@ class Interface:
                     templates[template_name] = f.read()
         return templates
     
+    def _load_db_in_session_state(self):
+        if "sql_query_templates" not in st.session_state:
+            st.session_state.sql_query_templates = self._load_sql_templates(self.SQL_TEMPLATES_PATH)
+        if "games_df" not in st.session_state:
+            st.session_state.games_df = self._query_database(st.session_state.sql_query_templates['get_all_games_query'])
+        if "reviews_df" not in st.session_state:
+            st.session_state.reviews_df = self._query_database(st.session_state.sql_query_templates['get_all_reviews_query'])
+        if "users_df" not in st.session_state:
+            st.session_state.users_df = self._query_database(st.session_state.sql_query_templates['get_all_users_query'])
+
     def display_header(self):
         st.title("🎙️ Voice2Query")
         st.caption("Speech-to-SQL dashboard for interactive database exploration")
@@ -70,16 +81,18 @@ class Interface:
         st.subheader("Database preview")
         st.caption("Inspect the schema before asking a voice query.")
 
-        sql_query_templates = self._load_sql_templates(self.SQL_TEMPLATES_PATH)
+        if not st.session_state.is_database_loaded:
+            self._load_db_in_session_state()
+            st.session_state.is_database_loaded = True
 
         tab1, tab2, tab3 = st.tabs(["🎮 Games", "⭐ Reviews", "👤 Users"])
 
         with tab1:
-            st.dataframe(self._query_database(sql_query_templates['get_all_games_query']), width="stretch", height=350)
+            st.dataframe(st.session_state.games_df, width="stretch", height=350)
         with tab2:
-            st.dataframe(self._query_database(sql_query_templates['get_all_reviews_query']), width="stretch", height=350)
+            st.dataframe(st.session_state.reviews_df, width="stretch", height=350)
         with tab3:
-            st.dataframe(self._query_database(sql_query_templates['get_all_users_query']), width="stretch", height=350) 
+            st.dataframe(st.session_state.users_df, width="stretch", height=350) 
     
     def side_bar(self):
         with st.sidebar:
