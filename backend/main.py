@@ -48,7 +48,7 @@ async def transcribe(file: UploadFile = File(...), model_name: str = Form(...)):
             shutil.copyfileobj(file.file, tmp)
             tmp_path = tmp.name
 
-        result = transcribe_audio(file_path=tmp_path, model_name=model_name)
+        result = await transcribe_audio(file_path=tmp_path, model_name=model_name)
         print(f'Transcription: {result}')
         return {'status': 'success', 'model_name': model_name, 'transcription': result}
     except Exception as e:

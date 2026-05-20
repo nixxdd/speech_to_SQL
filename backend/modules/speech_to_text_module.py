@@ -13,24 +13,6 @@ import asyncio
 import os
 from ..config import settings
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-AUDIO_FOLDER = os.path.join(BASE_DIR, "test_resources", "audio_tests")  
-
-def get_audio_files_path() -> list[str]:
-    """
-    Returns a list of all audio file paths found in the audio folder.
-    """
-    supported_formats = (".mp3", ".wav", ".m4a", ".ogg", ".flac")
-    
-    if not os.path.exists(AUDIO_FOLDER):
-        raise RuntimeError(f"Audio folder '{AUDIO_FOLDER}' not found")
-    
-    return [
-        os.path.join(AUDIO_FOLDER, f)
-        for f in os.listdir(AUDIO_FOLDER)
-        if f.endswith(supported_formats)
-    ]
-
 def _transcribe_whisper(file_path: str) -> str:
     model = whisper.load_model("turbo")
     result = model.transcribe(file_path)
@@ -40,6 +22,7 @@ async def _transcribe_speechmatics(file_path: str) -> str:
     SPEECHMATICS_API_KEY = settings.SPEECHMATICS_API_KEY
 
     try:
+        # Initialize batch client
         async with AsyncClient(api_key=SPEECHMATICS_API_KEY) as client:
             # Configure transcription
             config = TranscriptionConfig(
@@ -54,25 +37,17 @@ async def _transcribe_speechmatics(file_path: str) -> str:
             )
 
         # Extract and display transcript
-        transcript = result.transcript_text
-        print("Full transcript:")
-        print(f'"{transcript}"')
-    except( AuthenticationError, ValueError) as e:
-        print(f"\nAuthentication Error: {e}")
+        return result.transcript_text 
 
-def transcribe_audio(file_path: str, model_name: str) -> str:
+    except AuthenticationError as e:
+        raise ValueError(f"Speechmatics authentication failed: {e}") 
+    except Exception as e:
+        raise RuntimeError(f"Speechmatics transcription failed: {e}")
+
+async def transcribe_audio(file_path: str, model_name: str) -> str:
     if model_name.lower() == "whisper":
         return _transcribe_whisper(file_path)
     elif model_name.lower() == "speechmatics":
-        # speechmatics logic
-        pass
+        return await _transcribe_speechmatics(file_path)
     else:
         raise ValueError(f"Unknown model '{model_name}'. Use 'whisper' or 'speechmatics'")
-
-#def __main__():
-#    transcribe_audio(file_path=r"C:\Users\marco\Desktop\speech_to_sql_project\backend\modules\test_resources\audio_tests\q1.wav")
-
-print('speech_to_text_module START')
-print(f'AUDIO FOLDER PATH: {AUDIO_FOLDER}')
-#__main__()
-print('OK')

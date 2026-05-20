@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import pandas as pd
 from streamlit_mic_recorder import mic_recorder,speech_to_text
+import requests
 
 st.set_page_config(
     page_title="Speech to SQL",
@@ -142,7 +143,8 @@ class Interface:
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("▶ Run", width="stretch", type="primary"):
-                    self.fake_backend_pipeline(st.session_state.selected_model, audio_blob=audio)
+                    self._transcribe_audio(st.session_state.selected_model, audio_blob=audio)
+                    self.fake_backend_pipeline()
             with col2:
                 if st.button("✕ Clear", width="stretch"):
                     clear_toggle = True
@@ -151,10 +153,8 @@ class Interface:
                     st.rerun()  
 
 
-    
-    def fake_backend_pipeline(self, model_name, audio_blob=None):
-        st.session_state.transcript= "show me the games with rating greater than 8"
-        import requests
+    def _transcribe_audio(self, model_name, audio_blob=None):
+        st.session_state.transcript= "No Transcription yet"
 
         response = requests.post(
             "http://localhost:8000/transcribe",
@@ -173,7 +173,9 @@ class Interface:
         else:
             st.error(f'Error {response.status_code}: {response.text}')
 
-        
+
+
+    def fake_backend_pipeline(self):
         #Old Logic
         """
         Placeholder — replace each step with real backend calls:
@@ -195,7 +197,6 @@ class Interface:
             "game_name": ["The Witcher 3", "Portal 2", "Hades"],
             "rating":    [9.8, 9.4, 8.9],
         })
-        st.session_state.selected_model = model_name
         st.session_state.page = "review"
         st.rerun()
     
