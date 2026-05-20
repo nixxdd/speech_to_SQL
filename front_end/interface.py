@@ -24,25 +24,42 @@ class Interface:
         "audio_bytes": None,
     }
 
+
+
     def __init__(self):
-        self.database_path = r"database_example"
+        self.SQL_TEMPLATES_PATH = r'sql_query_templates'
 
         for k, v in self.DEFAULTS.items():
             if k not in st.session_state:
                 st.session_state[k] = v
     
-    def open_database(self):
-        files = ["games.csv", "reviews.csv", "users.csv"]
-        data = []
+    def _query_database(self, query: str) -> pd.DataFrame:
+        try:
+            response = requests.post(
+                        "http://localhost:8000/database_query",
+                        json={
+                            'query_text': query
+                        }
+                    )
 
-        for name in files:
-            path = os.path.join(self.database_path, name)
-            if os.path.exists(path):
-                data.append(pd.read_csv(path))
+            if response.ok:
+                result = response.json()
+                print(f'RESULT: {result}')
+                return pd.DataFrame(result['data'])
             else:
-                data.append(pd.DataFrame())
+                print(f'Error {response.status_code}: {response.text}')
+        except Exception as e:
+            print(e)
 
-        return data
+    def _load_sql_templates(self, folder_path: str) -> dict[str, str]:
+        templates = {}
+        for filename in os.listdir(folder_path):
+            if filename.endswith('.txt'):
+                file_path = os.path.join(folder_path, filename)
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    template_name = filename.replace('.txt', '')
+                    templates[template_name] = f.read()
+        return templates
     
     def display_header(self):
         st.title("🎙️ Voice2Query")
@@ -53,51 +70,16 @@ class Interface:
         st.subheader("Database preview")
         st.caption("Inspect the schema before asking a voice query.")
 
-        data = self.open_database()
+        sql_query_templates = self._load_sql_templates(self.SQL_TEMPLATES_PATH)
+
         tab1, tab2, tab3 = st.tabs(["🎮 Games", "⭐ Reviews", "👤 Users"])
 
         with tab1:
-            st.dataframe(data[0], width="stretch", height=350)
+            st.dataframe(self._query_database(sql_query_templates['get_all_games_query']), width="stretch", height=350)
         with tab2:
-            st.dataframe(data[1], width="stretch", height=350)
+            st.dataframe(self._query_database(sql_query_templates['get_all_reviews_query']), width="stretch", height=350)
         with tab3:
-            st.dataframe(data[2], width="stretch", height=350) 
-
-    
-    ## RAWWWWWWWWWWWRRRRRRRRRRRRRRRRRRRRRRRRR
-    # def style_button_row(self, clicked_button_ix, n_buttons):
-    #     def get_button_indices(button_ix):
-    #         return {
-    #             'nth_child': button_ix,
-    #             'nth_last_child': n_buttons - button_ix + 1
-    #         }
-
-    #     clicked_style = """
-    #     div[data-testid*="stHorizontalBlock"] > div:nth-child(%(nth_child)s):nth-last-child(%(nth_last_child)s) button {
-    #         border-color: rgb(255, 75, 75);
-    #         color: rgb(255, 75, 75);
-    #         box-shadow: rgba(255, 75, 75, 0.5) 0px 0px 0px 0.2rem;
-    #         outline: currentcolor none medium;
-    #     }
-    #     """
-    #     unclicked_style = """
-    #     div[data-testid*="stHorizontalBlock"] > div:nth-child(%(nth_child)s):nth-last-child(%(nth_last_child)s) button {
-    #         pointer-events: none;
-    #         cursor: not-allowed;
-    #         opacity: 0.65;
-    #         filter: alpha(opacity=65);
-    #         -webkit-box-shadow: none;
-    #         box-shadow: none;
-    #     }
-    #     """
-    #     style = ""
-    #     for ix in range(n_buttons):
-    #         ix += 1
-    #         if ix == clicked_button_ix:
-    #             style += clicked_style % get_button_indices(ix)
-    #         else:
-    #             style += unclicked_style % get_button_indices(ix)
-    #     st.markdown(f"<style>{style}</style>", unsafe_allow_html=True)
+            st.dataframe(self._query_database(sql_query_templates['get_all_users_query']), width="stretch", height=350) 
     
     def side_bar(self):
         with st.sidebar:

@@ -33,22 +33,6 @@ app = FastAPI()
 def root():
     return {"message": "FastAPI app is running"}
 
-# @app.post("/transcribe")
-# async def transcribe(file: UploadFile = File(...), model_name: str = Form(...)):
-#     print(f"Received file: {file.filename}, content_type: {file.content_type}, model_name: {model_name}")
-    
-#     try:
-#         contents = await file.read()
-#         print(f"File size: {len(contents)} bytes")
-
-#         # TODO: pass `contents` to your transcription model here
-#         transcript = "placeholder transcript"
-
-#         return {"transcript": transcript, "filename": file.filename}
-#     except Exception as e:
-#         print(f"Error: {e}")
-#         raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...), model_name: str = Form(...)):
     try:
@@ -65,11 +49,6 @@ async def transcribe(file: UploadFile = File(...), model_name: str = Form(...)):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         os.remove(tmp_path)
-
-# TEST ENDPOINT
-@app.get("/get_audio")
-def get_audio_files():
-    return {"status": "success", "data": get_audio_files()}
 
 @app.post('/database_query')
 def run_database_query(request: QueryRequest, db: Session = Depends(get_db)):
