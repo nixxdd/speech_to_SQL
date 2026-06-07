@@ -1,9 +1,10 @@
-.venv/
-.env
-__pycache__/
 **/.venv/
 **/.env
 **/__pycache__/
 backend/.venv/
 backend/modules/.env
-C:/Users/marco/Desktop/speech_to_sql_project/backend/.venv
+**/.DS_Store
+/report/*
+!/report/assets
+!/report/speech_sql_report.pdf
+!/report/speech_sql_report.tex
