@@ -69,7 +69,7 @@ The system is based on a cascaded pipeline architecture, widely validated in sci
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=0.8\textwidth]{assets/speech_to_SQL_diagram.jpg}
+\includegraphics[width=0.8\textwidth]{assets/speech_to_SQL_diagram.pdf}
 \caption{System Architecture Diagram}
 \label{sys_arch_fig}
 \end{center}
@@ -152,7 +152,7 @@ WrenAI supports a wide range of databases, including PostgreSQL, MySQL, and SQLi
 
 \subsection{Issues and Limitations}
 Using the legacy version of WrenAI means that the accuracy of the generated SQL queries may not be as high as desired. We saw this in our testing, where some of the generated SQL queries were not correct and required manual correction. 
-% Correction can be done by the user through our custom UI to both the generated SQL query and the transcribed text. 
+Correction can be done by the user through our custom UI to the transcribed text. 
 Furthermore, needing to use Ollama to run the LLM locally adds more latency and accuracy issues since the LLMs that can be run locally are not as powerful as the ones available on the cloud. Nonetheless, using the local version of WrenAI and Ollama allows us to avoid the costs associated with using the cloud-based WrenAI service, making it a more cost-effective solution for our project.
 
 \pagebreak

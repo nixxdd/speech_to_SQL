@@ -2,16 +2,22 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
 # Import the settings from your new config module
-from ..config import settings
+# from ..config import settings
 
-DATABASE_URL = (
-    f"postgresql+psycopg://{settings.DB_USER}:{settings.DB_PASSWORD}"
-    f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
-)
+from dotenv import load_dotenv
 
-engine = create_engine(DATABASE_URL, echo=True)
+load_dotenv()
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# DATABASE_URL = (
+#     f"postgresql+psycopg://{settings.DB_USER}:{settings.DB_PASSWORD}"
+#     f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+# )
+
+# engine = create_engine(DATABASE_URL, echo=True)
+
+# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False)
+
 
 Base = declarative_base()
 

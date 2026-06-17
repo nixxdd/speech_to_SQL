@@ -1,6 +1,4 @@
 """
-PSUDO CODE
-
 - When calling this module you pass an audio file and which engine to use (Whisper or Speechmatics)
 - Whisper runs locally
 - Speechmatics connect to their cloud service using an API key and fetches the result
@@ -9,8 +7,6 @@ PSUDO CODE
 
 import whisper
 from speechmatics.batch import AsyncClient, TranscriptionConfig, OperatingPoint, AuthenticationError
-import asyncio
-import os
 from ..config import settings
 
 def _transcribe_whisper(file_path: str) -> str:

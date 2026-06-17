@@ -13,15 +13,16 @@ import logging
 
 
 from .modules.db_module import get_db, select_query
-from .modules.wrenai_module import generate_sql
+from .modules.wrenai_module import generate_sql, run_sql
 from .modules.speech_to_text_module import transcribe_audio
 
-class QueryRequest(BaseModel):
-    query_text: str
-    params: dict = {}
+from .config import settings
 
 class QuestionRequest(BaseModel):
     question: str
+
+class QueryRequest(BaseModel):
+    sql_query: str
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -32,6 +33,20 @@ app = FastAPI()
 @app.get("/")
 def root():
     return {"message": "FastAPI app is running"}
+
+@app.get("/store_speechmatics_key")
+async def store_speechmatics_key(api_key):
+    print(api_key)
+    settings.SPEECHMATICS_API_KEY = api_key
+    print(settings.SPEECHMATICS_API_KEY, "YOOOOOOOO" )
+    return True
+
+@app.get("/get_tables")
+async def get_tables():
+    query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
+    result = run_sql(query)
+    tables = [record["table_name"] for record in result["records"]]
+    return tables
 
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...), model_name: str = Form(...)):
@@ -50,17 +65,6 @@ async def transcribe(file: UploadFile = File(...), model_name: str = Form(...)):
     finally:
         os.remove(tmp_path)
 
-@app.post('/database_query')
-def run_database_query(request: QueryRequest, db: Session = Depends(get_db)):
-    """
-    Run a query in the database
-    """
-    try:
-        result = select_query(db, request.query_text, request.params)    
-        return {"status": "Success", "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/generate_sql")
 def generate_sql_with_wrenai(request: QuestionRequest):
     try:
@@ -69,6 +73,12 @@ def generate_sql_with_wrenai(request: QuestionRequest):
         return {"status": "success", "data": result['sql']}
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/run_sql")
+def execute_sql(request: QueryRequest):
+    result = run_sql(request.sql_query)
+    return {"records": result["records"], "columns": result["columns"]}
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):

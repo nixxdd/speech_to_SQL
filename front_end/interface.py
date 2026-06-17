@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from streamlit_mic_recorder import mic_recorder,speech_to_text
 import requests
+from utils.check_system import check_ffmpeg, check_speechmatics_api
 
 st.set_page_config(
     page_title="Speech to SQL",
@@ -11,9 +12,32 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+@st.dialog("⚠️ Error")
+def error_dialog(message: str, callback):
+    st.error(message)
+    callback()
+    if st.button("OK"):
+        st.rerun()
+
+@st.dialog("⚙️ Setup")
+def speechmatics_dialog():
+    st.text("Please create an account on Speechmatics and create ane API key, then paste it here.\n Go to https://portal.speechmatics.com/settings/ to create an API Key.")
+    api = st.text_input("Speechmatics API Key", key="api_key_input", type="password")
+    if st.button("Save"):
+        if check_speechmatics_api(api) == True:
+            with open("speechmatics_key.txt", "w") as f:
+                f.write(api)
+            st.session_state.requirements["speechmatics"] = api
+            st.rerun()
+
+st.session_state["requirements"] = {
+    "speechmatics": False,
+    "ffmpeg": False,
+    "backend": False
+}
+
 
 class Interface:
-
     DEFAULTS = {
         "page": "home",
         "selected_model": "Whisper",
@@ -22,80 +46,90 @@ class Interface:
         "generated_sql": "",
         "query_result": None,
         "audio_bytes": None,
-        "is_database_loaded": False
+        "is_database_loaded": False,
+        "requirements": {
+            "speechmatics": False,
+            "ffmpeg": False,
+            "backend": False
+        },
+        "just_cleared": False
     }
 
 
-
     def __init__(self):
-        self.SQL_TEMPLATES_PATH = r'sql_query_templates'
-
         for k, v in self.DEFAULTS.items():
             if k not in st.session_state:
                 st.session_state[k] = v
+        if os.path.exists("speechmatics_key.txt"):
+            with open("speechmatics_key.txt", 'r') as f: 
+                st.session_state.requirements["speechmatics"] = f.read().strip()
+        self._load_db_tables()
+        def callback():
+            st.session_state.requirements["ffmpeg"] = check_ffmpeg()
+        callback()
+        if not st.session_state.requirements["ffmpeg"]:
+            error_dialog("Please make sure 'ffmpeg' is installed!", callback=callback)
+        
+
+    def _get_tables(self) -> list[str]:
+        response = requests.get(
+            "http://localhost:8000/get_tables",
+        )
+        if response.ok:
+            result = response.json()
+            return result
     
     def _query_database(self, query: str) -> pd.DataFrame:
         try:
             response = requests.post(
-                        "http://localhost:8000/database_query",
+                        "http://localhost:8000/run_sql",
                         json={
-                            'query_text': query
+                            'sql_query': query
                         }
                     )
-
             if response.ok:
                 result = response.json()
-                print(f'RESULT: {result}')
-                return pd.DataFrame(result['data'])
+                print(f"RESULT: {result['records']}")
+                return pd.DataFrame(result['records'])
             else:
                 print(f'Error {response.status_code}: {response.text}')
         except Exception as e:
             print(e)
 
-    def _load_sql_templates(self, folder_path: str) -> dict[str, str]:
-        templates = {}
-        for filename in os.listdir(folder_path):
-            if filename.endswith('.txt'):
-                file_path = os.path.join(folder_path, filename)
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    template_name = filename.replace('.txt', '')
-                    templates[template_name] = f.read()
-        return templates
-    
-    def _load_db_in_session_state(self):
-        if "sql_query_templates" not in st.session_state:
-            st.session_state.sql_query_templates = self._load_sql_templates(self.SQL_TEMPLATES_PATH)
-        if "games_df" not in st.session_state:
-            st.session_state.games_df = self._query_database(st.session_state.sql_query_templates['get_all_games_query'])
-        if "reviews_df" not in st.session_state:
-            st.session_state.reviews_df = self._query_database(st.session_state.sql_query_templates['get_all_reviews_query'])
-        if "users_df" not in st.session_state:
-            st.session_state.users_df = self._query_database(st.session_state.sql_query_templates['get_all_users_query'])
-
+    def _load_db_tables(self) -> list[str]:
+        if "table_names" not in st.session_state:
+            tables = [table.title() for table in self._get_tables()]
+            st.session_state.table_names = tables
+            st.session_state.requirements["backend"] = True
+        
     def display_header(self):
         st.title(":rainbow[:material/mic: Voice2Query]")
         st.caption("Speech-to-SQL dashboard for interactive database exploration")
         st.divider()
+
+    def show_nav_bar(self):
+        cols = st.columns(10)  
+        for i, col in enumerate(cols):
+            with col:
+                st.button(f"Button {i+1}")
 
     def show_database(self):
         st.subheader("Database preview")
         st.caption("Inspect the schema before asking a voice query.")
 
         if not st.session_state.is_database_loaded:
-            self._load_db_in_session_state()
+            self._load_db_tables()
             st.session_state.is_database_loaded = True
 
-        tab1, tab2, tab3 = st.tabs([":material/gamepad: **Games**", ":material/star_shine: **Reviews**", ":material/person_pin: **Users**"])
-
-        with tab1:
-            st.dataframe(st.session_state.games_df, width="stretch", height=350, hide_index=True)
-        with tab2:
-            st.dataframe(st.session_state.reviews_df, width="stretch", height=350, hide_index=True)
-        with tab3:
-            st.dataframe(st.session_state.users_df, width="stretch", height=350, hide_index=True) 
+        tabs = st.tabs(st.session_state.table_names)
+        for (i,tab) in enumerate(tabs):
+            with tab:
+                current_table_name = st.session_state.table_names[i]
+                if current_table_name not in st.session_state:
+                    st.session_state[current_table_name] = self._query_database(f"SELECT * FROM {current_table_name};")
+                st.dataframe(st.session_state[current_table_name], width="stretch", height=350, hide_index=True)
     
     def side_bar(self):
-
         st.markdown(
                 """
                 <style>
@@ -109,6 +143,27 @@ class Interface:
 
         with st.sidebar:
             st.header(":material/mic: Query input")
+            st.caption("Choose the ASR model")
+            
+            col1, col2 = st.columns(2, gap="small", vertical_alignment='center')
+            with col1:
+                whisper_button = st.button("**Whisper**", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(1, 2))
+            with col2:
+                speechmatics_button = st.button("**Speechmatics**", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(2, 2))
+            
+            if whisper_button:
+                st.session_state.selected_model = "Whisper"
+            if speechmatics_button:
+                if not st.session_state.requirements["speechmatics"]:
+                    speechmatics_dialog()
+                st.session_state.selected_model = "Speechmatics"
+
+            st.markdown(
+                f':color[Model: **{st.session_state.selected_model}**]{{foreground="#8cf7f6"}}'
+            , text_alignment="center")
+            
+            st.divider()
+
             st.markdown("**Record your query**")
 
             audio = mic_recorder(
@@ -119,52 +174,56 @@ class Interface:
                 key="recorder",
             )
 
-            if audio and audio["bytes"] != st.session_state.audio_bytes:
-                st.session_state.audio_bytes = audio["bytes"]
-
-            st.divider()
-
-            st.caption("Choose the ASR model")
-            
-            col1, col2 = st.columns(2, gap="small", vertical_alignment='center')
-            with col1:
-                whisper_botton = st.button("**Whisper**", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(1, 2))
-            with col2:
-                speechmatics_botton = st.button("**Speechmatics**", icon=":material/record_voice_over:", disabled=False, width="stretch", )#on_click=self.style_button_row, args=(2, 2))
-            
-            if whisper_botton:
-                st.session_state.selected_model = "Whisper"
-            if speechmatics_botton:
-                st.session_state.selected_model = "Speechmatics"
-        
-            st.markdown(
-                f':color[Model: **{st.session_state.selected_model}**]{{foreground="#8cf7f6"}}'
-            , text_alignment="center")
-            
-            st.divider()
-            
+            if audio and audio["bytes"] and audio["bytes"] != st.session_state.audio_bytes:
+                if st.session_state.get("just_cleared"):
+                    st.session_state.just_cleared = False
+                else:
+                    st.session_state.audio_bytes = audio["bytes"]
+                    with st.spinner("🎙️ Transcribing..."):
+                        result = self._transcribe_audio(st.session_state.selected_model, audio_blob=audio)
+                        if result:
+                            st.session_state.transcript = result['transcription']
+                            print(f'Transcription: {st.session_state.transcript}')
+                    st.rerun()
             
             if st.session_state.audio_bytes:
                 st.success(":material/done_outline: Audio captured")
                 st.audio(st.session_state.audio_bytes, format="audio/wav")
 
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("▶ Run", width="stretch", type="primary"):
-                    self._transcribe_audio(st.session_state.selected_model, audio_blob=audio)
+            if st.session_state.get("transcript"):
+                transcribed_text = st.text_area(
+                    "Transcription:",
+                    value=st.session_state.transcript,
+                    height=150,
+                    disabled=False
+                )
+            
+            has_content = bool(st.session_state.transcript.strip())
+            if st.button("▶ Run", width="stretch", type="primary", disabled= not has_content):
+                # self._transcribe_audio(st.session_state.selected_model, audio_blob=audio)
+                if st.session_state.transcript != transcribed_text:
+                    st.session_state["transcript"] = transcribed_text
+                with st.spinner("Processing..."):
                     self._generate_sql_from_text(st.session_state.transcript)
-                    self.fake_backend_pipeline()
-            with col2:
-                if st.button("✕ Clear", width="stretch"):
-                    clear_toggle = True
-                    for k, v in self.DEFAULTS.items():
-                        st.session_state[k] = v
-                    st.rerun()  
+                self.fake_backend_pipeline()
 
+            # with col2:
+            #     if st.session_state.get("audio_bytes") or st.session_state.get("transcript"):
+            #         if st.button("✕ Clear", width="stretch"):
+            #             # requirements = st.session_state.requirements
+            #             # selected_model = st.session_state.selected_model
+            #             # clear_toggle = True
+            #             for k, v in self.DEFAULTS.items():
+            #                 st.session_state[k] = v
+            #             st.session_state.just_cleared = True
+            #             # st.session_state.selected_model = selected_model
+            #             # st.session_state.requirements = requirements
+            #             st.rerun()
 
     def _transcribe_audio(self, model_name, audio_blob=None):
+        if model_name == "Speechmatics":
+            self._store_speechmatics(st.session_state.requirements["speechmatics"])
         st.session_state.transcript= "No Transcription yet"
-
         response = requests.post(
             "http://localhost:8000/transcribe",
             files={
@@ -177,24 +236,29 @@ class Interface:
 
         if response.ok:
             result = response.json()
-            st.session_state.transcript = result['transcription']
-            print(f'Transcription: {st.session_state.transcript}')
+            return result
         else:
             st.error(f'Error {response.status_code}: {response.text}')
+            return None
+        
 
     def _fix_wrenai_table_name(self, query: str) -> str:
         while "public_" in query:
             query = query.replace('public_', '')
         return query
 
+
+    def _store_speechmatics(self, key):
+        response =requests.get("http://localhost:8000/store_speechmatics_key",
+        params={
+            "api_key": key
+        })
+        return response.json()
+
     def _generate_sql_from_text(self, question):
         st.session_state.generated_sql  = (
-            "SELECT game_name, rating\n"
-            "FROM games\n"
-            "WHERE rating > 8\n"
-            "ORDER BY rating DESC;"
+           ""
         )
-
         response = requests.post(
             "http://localhost:8000/generate_sql",
             json={
@@ -252,7 +316,7 @@ class Interface:
                 width="stretch",
             )
         with col_img:
-            st.image("files/pipeline_overview.png", width="stretch")
+            st.image("files/pipeline_overview.svg", width="stretch")
 
             
 
